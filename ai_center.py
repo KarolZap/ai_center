@@ -59,4 +59,4 @@ def webhook():
     if not dane:
         return "Brak danych JSON", 400
 
-    signal = dane.get("signal",
+    signal = dane.get("signal")

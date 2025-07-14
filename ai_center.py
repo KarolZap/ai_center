@@ -6,14 +6,14 @@ import logging
 import json
 import os
 
-# === KONFIGURACJA EMAIL (z REPLIT SECRETS) ===
+# === KONFIGURACJA EMAIL (z ENV Variables na Renderze) ===
 EMAIL = os.environ.get("EMAIL")
 EMAIL_HASLO = os.environ.get("EMAIL_HASLO")
 EMAIL_ODB = os.environ.get("EMAIL_ODB")
 
 # === GODZINY HANDLU ===
-GODZINY_OD = 9
-GODZINY_DO = 19
+GODZINY_OD = 6
+GODZINY_DO = 23
 
 # === PRZYGOTUJ FOLDER Z LOGAMI ===
 os.makedirs("logs", exist_ok=True)
@@ -39,10 +39,15 @@ def wyslij_maila(subject, message):
         print("❌ Błąd maila:", e)
         logging.error(f"{datetime.now()} - Błąd: {e}")
 
-# === GŁÓWNY ENDPOINT ===
+# === ENDPOINT GET – żeby strona działała normalnie ===
+@app.route("/", methods=["GET"])
+def index():
+    return "✅ AI Center działa!", 200
+
+# === ENDPOINT POST – główny webhook od TradingView ===
 @app.route("/", methods=["POST"])
 def webhook():
-    teraz = datetime.utcnow()
+    teraz = datetime.now(timezone.utc)
     godzina = teraz.hour
 
     if godzina < GODZINY_OD or godzina >= GODZINY_DO:
@@ -54,27 +59,4 @@ def webhook():
     if not dane:
         return "Brak danych JSON", 400
 
-    signal = dane.get("signal", "").upper()
-    if signal not in ["BUY", "SELL"]:
-        return f"Nieznany sygnał: {signal}", 400
-
-    # Przygotuj treść emaila z dodatkowymi informacjami
-    tresc = f"""
-📈 Otrzymano sygnał: {signal}
-
-📌 Coin: {dane.get('coin', 'Nieznany')}
-💬 Notka: {dane.get('note', 'Brak notki')}
-🎯 Ticker: {dane.get('ticker', 'Brak tikera')}
-
-Pełne dane:
-{json.dumps(dane, indent=2)}
-""".strip()
-
-    temat = f"🔔 AI Sygnał: {signal} ({dane.get('coin', 'Krypto')})"
-
-    wyslij_maila(temat, tresc)
-    return f"OK – Odebrano sygnał: {signal}", 200
-
-# === START ===
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    signal = dane.get("signal",

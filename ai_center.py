@@ -58,5 +58,8 @@ def webhook():
     dane = request.get_json()
     if not dane:
         return "Brak danych JSON", 400
+print("EMAIL:", EMAIL)
+print("EMAIL_HASLO:", EMAIL_HASLO)
+print("EMAIL_ODB:", EMAIL_ODB)
 
     signal = dane.get("signal")
